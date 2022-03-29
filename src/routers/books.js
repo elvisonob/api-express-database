@@ -51,4 +51,85 @@ booksRouter.post('/', (req, res) => {
         })
 })
 
+
+//DELETE
+
+//I am making a delete method here with a book param.
+booksRouter.delete('/:bookId', (req, res) => {
+    //Right here, I am assigning the SQL syntax of delete to a variable
+    const deleteBooksQuery = `DELETE FROM books WHERE id = $1 RETURNING *`
+    
+    //declaring the params Id position number to delete to a variable
+    const deleteValues = [
+        req.params.bookId,
+    ]
+
+    //I am sending a database query
+    db.query(deleteBooksQuery, deleteValues)
+    .then((databaseResult)=> {
+        console.log(databaseResult)
+        //I understand this to mean that if the row to be deleted is 0, then an error should be send with json
+        if (databaseResult.rowCount===0) {
+            res.status(404)
+            res.json({error:"book does not exist"})
+        } else {
+            res.json({book:databaseResult.rows[0]})
+        }
+    })
+    //this part of code is to catch an unintended error
+    .catch ((error) => {
+        console.log(error)
+        res.status(500)
+        res.json({error: 'unexpected error'})
+    })
+
+})
+
+//I am stating the put method here
+booksRouter.put('/:bookId', (req, res)=>{
+    //I am declaring a variable and assigning the syntax/format for the put method to it
+    const updateBooksQuery = `
+    UPDATE books SET
+    title = $1,
+    type = $2,
+    author = $3,
+    topic = $4,
+    publicationDate = $5,
+    pages = $6
+WHERE id = $7
+    RETURNING *`
+
+    //declaring the expected input to a variable
+    const updateValues = [
+        req.body.title, 
+        req.body.type,
+        req.body.author,
+        req.body.topic,
+        req.body.publicationDate,
+        req.body.pages,
+        req.params.bookId,
+    ]
+
+    //sending my request to the database through 'db'
+    db.query(updateBooksQuery, updateValues)
+    .then (databaseResult => {
+        console.log(databaseResult)
+        //I understood in class that if a row count is 0, it should definitely show error, because 0 doesn't exist
+        if(databaseResult.rowCount===0) {
+            res.status(404)
+            res.json({error:'book does not exist'})
+        }
+        else {
+            res.json({book: databaseResult.rows[0]})
+        }
+    })
+    .catch(error=> {
+        console.log(error)
+        res.status(500)
+        res.json({error: 'unexpected error'})
+    })
+
+
+})
+
 module.exports=booksRouter

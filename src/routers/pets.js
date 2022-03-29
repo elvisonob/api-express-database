@@ -6,7 +6,8 @@ const petsRouter=express.Router()
 const db= require ('../utils/database')
 
 petsRouter.get('/', (req,res)=>{
-    const selectAllPetsQuery='SELECT * FROM pets'
+    //Adding the limit and offset of extension 1 to the 'selectAllPetsQuery' variable
+    const selectAllPetsQuery='SELECT * FROM pets limit 10 offset 50'
 
     db.query(selectAllPetsQuery)
     .then(databaseResult=> {
@@ -75,6 +76,79 @@ db.query(insertPetsQuery, petValues)
     console.log(error)
     res.status(500)
     res.json({error:'unexpected error'})
+})
+
+})
+
+//DELETE
+//I am making a delete method here with a pet param.
+petsRouter.delete("/:petId", (req, res) =>{
+    //Right here, I am assigning the SQL syntax of delete to a variable
+    const deletePetsQuery = `DELETE FROM pets WHERE id = $1 RETURNING *`
+    //declaring the params Id position number to delete to a variable
+    const deleteValues=[
+        req.params.petId,
+    ]
+
+    //I am sending a database query
+    db.query(deletePetsQuery, deleteValues)
+    .then((petResult)=> {
+        console.log(petResult)
+        if(petResult.rowCount===0) {
+            res.status(404)
+            res.json({error: "pet does not exist"})
+        } else {
+            res.json({pet: petResult.rows[0]})
+        }
+    })
+    //this part of code is to catch an unintended error
+    .catch((error) => {
+        console.log(error)
+        res.status(500)
+        res.json({error: 'unexpected error'})
+    })
+})
+
+//UPDATING
+//I am stating the put method here
+petsRouter.put('/:petId', (req, res)=> {
+    //I am declaring a variable and assigning the syntax/format for the put method to it
+    const updatePetsQuery = `
+    UPDATE pets SET
+    name = $1,
+    age = $2,
+    type = $3,
+    breed = $4,
+    microchip = $5
+WHERE id = $6
+RETURNING *`
+
+//declaring the expected input to a variable
+const updateValues = [
+    req.body.name,
+    req.body.age,
+    req.body.type,
+    req.body.breed,
+    req.body.microchip,
+    req.params.petId,
+]
+
+//sending my request to the database through 'db'
+db.query(updatePetsQuery, updateValues)
+.then(databaseResult=> {
+    console.log(databaseResult)
+    if (databaseResult.rowCount===0) {
+        res.status(404)
+        res.json({error: 'pet does not exist'})
+    }
+    else {
+        res.json({pet:databaseResult.rows[0]})
+    }
+})
+.catch(error=> {
+    console.log(error)
+    res.status(500)
+    res.json({error: 'unexpected error'})
 })
 
 })
